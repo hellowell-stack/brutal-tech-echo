@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -52,6 +53,14 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Neo-brutalism color palette
+				neobrutalism: {
+					black: '#000000',
+					white: '#FFFFFF',
+					pink: '#FF2E63',
+					yellow: '#FCFF4B',
+					teal: '#01FFC3',
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -67,6 +76,15 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			boxShadow: {
+				'neobrutalism': '5px 5px 0px 0px #000000',
+				'neobrutalism-sm': '3px 3px 0px 0px #000000',
+				'neobrutalism-lg': '8px 8px 0px 0px #000000',
+			},
+			fontFamily: {
+				'space-grotesk': ['"Space Grotesk"', 'sans-serif'],
+				'inter': ['"Inter"', 'sans-serif'],
 			},
 			keyframes: {
 				'accordion-down': {
@@ -84,11 +102,21 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				marquee: {
+					'0%': { transform: 'translateX(0%)' },
+					'100%': { transform: 'translateX(-100%)' }
+				},
+				blink: {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'marquee': 'marquee 25s linear infinite',
+				'blink': 'blink 1s step-start infinite'
 			}
 		}
 	},
