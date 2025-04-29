@@ -6,6 +6,7 @@ import FeaturedPost from '../components/FeaturedPost';
 import BlogCard from '../components/BlogCard';
 import Newsletter from '../components/Newsletter';
 import CategoryPill from '../components/CategoryPill';
+import AdminPostCreator from '../components/AdminPostCreator';
 import { blogPosts, categories, featuredPost } from '../data/blogPosts';
 
 const Index = () => {
@@ -22,6 +23,14 @@ const Index = () => {
       <main>
         {/* Featured Post */}
         <FeaturedPost post={featuredPost} />
+        
+        {/* Admin Section */}
+        <section className="container mx-auto px-4 mt-8 text-center">
+          <div className="inline-block bg-neobrutalism-yellow p-4 border-2 border-black mb-4">
+            <h2 className="text-lg font-bold mb-2">Admin Area</h2>
+            <AdminPostCreator />
+          </div>
+        </section>
         
         {/* Categories */}
         <section className="container mx-auto px-4 my-8">

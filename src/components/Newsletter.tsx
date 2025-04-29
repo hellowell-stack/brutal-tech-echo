@@ -1,5 +1,6 @@
 
 import React from 'react';
+import SubscribeModal from './SubscribeModal';
 
 const Newsletter: React.FC = () => {
   return (
@@ -12,20 +13,7 @@ const Newsletter: React.FC = () => {
           <p className="text-lg mb-8">
             Subscribe to our newsletter and get the freshest tech insights delivered to your inbox weekly.
           </p>
-          <form className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="email"
-              placeholder="Your email address"
-              className="px-4 py-3 flex-grow border-2 border-black shadow-neobrutalism-sm"
-              required
-            />
-            <button
-              type="submit"
-              className="neo-button bg-black text-white font-bold py-3 px-6"
-            >
-              Subscribe
-            </button>
-          </form>
+          <SubscribeModal />
           <p className="text-xs mt-4">
             By subscribing, you agree to our Privacy Policy and consent to receive updates from our company.
           </p>
