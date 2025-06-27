@@ -9,10 +9,12 @@ import CategoryPill from '../components/CategoryPill';
 import AdminPostCreator from '../components/AdminPostCreator';
 import { useBlogPosts } from '../hooks/useBlogPosts';
 import { convertDatabasePostToBlogPost } from '../utils/blogPostConverter';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const { data: dbPosts, isLoading, error } = useBlogPosts();
+  const { user } = useAuth();
   
   const categories = ['All', 'AI', 'Web3', 'Mobile', 'Cloud', 'DevOps', 'Design'];
   
@@ -35,13 +37,14 @@ const Index = () => {
         {/* Featured Post */}
         {featuredPost && <FeaturedPost post={featuredPost} />}
         
-        {/* Admin Section */}
-        <section className="container mx-auto px-4 mt-8 text-center">
-          <div className="inline-block bg-neobrutalism-yellow p-4 border-2 border-black mb-4">
-            <h2 className="text-lg font-bold mb-2">Admin Area</h2>
-            <AdminPostCreator />
-          </div>
-        </section>
+        {/* Admin Section - Only show if user is logged in */}
+        {user && (
+          <section className="container mx-auto px-4 mt-8">
+            <div className="bg-neobrutalism-yellow p-6 border-4 border-black mb-8">
+              <AdminPostCreator />
+            </div>
+          </section>
+        )}
         
         {/* Categories */}
         <section className="container mx-auto px-4 my-8">
@@ -75,7 +78,12 @@ const Index = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-lg">No posts found. Create your first post using the admin panel above!</p>
+              <p className="text-lg">
+                {user 
+                  ? "No posts found. Create your first post using the form above!" 
+                  : "No posts found. Login to start creating posts!"
+                }
+              </p>
             </div>
           )}
         </section>

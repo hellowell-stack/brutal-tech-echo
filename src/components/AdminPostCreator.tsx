@@ -1,210 +1,184 @@
 
 import React, { useState } from 'react';
-import { toast } from '@/components/ui/sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/integrations/supabase/client';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+import { useCreateBlogPost } from '@/hooks/useBlogPosts';
+import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
 const AdminPostCreator = () => {
-  const [postTitle, setPostTitle] = useState('');
-  const [postExcerpt, setPostExcerpt] = useState('');
-  const [postContent, setPostContent] = useState('');
-  const [postCategory, setPostCategory] = useState('');
-  const [authorName, setAuthorName] = useState('');
+  const { user } = useAuth();
+  const { data: profile } = useProfile(user?.id);
+  const createBlogPost = useCreateBlogPost();
+  const { toast } = useToast();
+  
+  const [title, setTitle] = useState('');
+  const [excerpt, setExcerpt] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('AI');
   const [imageUrl, setImageUrl] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [readTime, setReadTime] = useState('5 min read');
 
-  const categories = ['AI', 'Web3', 'Mobile', 'Cloud', 'DevOps', 'Design'];
+  if (!user) {
+    return (
+      <div className="text-center p-4">
+        <p className="mb-4">You need to be logged in to create blog posts.</p>
+        <Link to="/auth" className="neo-button">
+          Login to Create Posts
+        </Link>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
+    if (!title.trim() || !content.trim()) {
+      toast({
+        title: "Error",
+        description: "Title and content are required",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .insert([
-          {
-            title: postTitle,
-            excerpt: postExcerpt,
-            content: postContent,
-            category: postCategory,
-            author_name: authorName || 'Admin',
-            author_avatar: '/placeholder.svg',
-            image_url: imageUrl || '/placeholder.svg',
-            read_time: `${Math.ceil(postContent.split(' ').length / 200)} min read`,
-          }
-        ])
-        .select();
-
-      if (error) {
-        throw error;
-      }
-
-      setIsOpen(false);
-      
-      // Show success toast
-      toast.success("Blog post created!", {
-        description: "Your new post has been published successfully.",
+      await createBlogPost.mutateAsync({
+        title: title.trim(),
+        excerpt: excerpt.trim() || title.substring(0, 100) + '...',
+        content: content.trim(),
+        category,
+        author_name: profile?.full_name || user.email || 'Anonymous',
+        author_avatar: profile?.avatar_url,
+        image_url: imageUrl.trim() || '/placeholder.svg',
+        read_time: readTime,
+        published: true
       });
-      
+
       // Reset form
-      setPostTitle('');
-      setPostExcerpt('');
-      setPostContent('');
-      setPostCategory('');
-      setAuthorName('');
+      setTitle('');
+      setExcerpt('');
+      setContent('');
+      setCategory('AI');
       setImageUrl('');
-      
-      // Refresh the page to show the new post
-      window.location.reload();
-    } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error("Failed to create post", {
-        description: "Please try again later.",
+      setReadTime('5 min read');
+
+      toast({
+        title: "Success",
+        description: "Blog post created successfully!"
       });
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Error creating blog post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create blog post. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-black text-white font-bold py-2 px-4 border-2 border-black hover:translate-y-[-2px] hover:translate-x-[-2px] transition-all shadow-neobrutalism-sm hover:shadow-neobrutalism">
-          Create New Post
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="border-2 border-black shadow-neobrutalism max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">Create New Blog Post</DialogTitle>
-          <DialogDescription>
-            Fill in the details for your new blog post. It will be published immediately.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="title" className="text-sm font-medium">
-                  Post Title *
-                </label>
-                <Input
-                  id="title"
-                  value={postTitle}
-                  onChange={(e) => setPostTitle(e.target.value)}
-                  placeholder="Enter post title"
-                  required
-                  className="border-2 border-black"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="category" className="text-sm font-medium">
-                  Category *
-                </label>
-                <Select value={postCategory} onValueChange={setPostCategory} required>
-                  <SelectTrigger className="border-2 border-black">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+    <div className="max-w-2xl mx-auto">
+      <h2 className="text-2xl font-bold mb-4">Create New Blog Post</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="title" className="block text-sm font-bold mb-2">
+            Title *
+          </label>
+          <input
+            id="title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full px-3 py-2 border-2 border-black focus:outline-none focus:ring-2 focus:ring-neobrutalism-pink"
+            placeholder="Enter blog post title"
+            required
+          />
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="author" className="text-sm font-medium">
-                  Author Name
-                </label>
-                <Input
-                  id="author"
-                  value={authorName}
-                  onChange={(e) => setAuthorName(e.target.value)}
-                  placeholder="Author name (optional)"
-                  className="border-2 border-black"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="image" className="text-sm font-medium">
-                  Image URL
-                </label>
-                <Input
-                  id="image"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Image URL (optional)"
-                  className="border-2 border-black"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="excerpt" className="text-sm font-medium">
-                Post Excerpt *
-              </label>
-              <Textarea
-                id="excerpt"
-                value={postExcerpt}
-                onChange={(e) => setPostExcerpt(e.target.value)}
-                placeholder="Brief description of the post"
-                required
-                className="min-h-[80px] border-2 border-black"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="content" className="text-sm font-medium">
-                Post Content *
-              </label>
-              <Textarea
-                id="content"
-                value={postContent}
-                onChange={(e) => setPostContent(e.target.value)}
-                placeholder="Write your full blog post content here..."
-                required
-                className="min-h-[300px] border-2 border-black"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="bg-neobrutalism-pink text-white hover:bg-neobrutalism-pink/90 hover:translate-y-[-2px] hover:translate-x-[-2px] transition-all shadow-neobrutalism-sm hover:shadow-neobrutalism"
-            >
-              {isLoading ? "Publishing..." : "Publish Post"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div>
+          <label htmlFor="excerpt" className="block text-sm font-bold mb-2">
+            Excerpt
+          </label>
+          <textarea
+            id="excerpt"
+            value={excerpt}
+            onChange={(e) => setExcerpt(e.target.value)}
+            className="w-full px-3 py-2 border-2 border-black focus:outline-none focus:ring-2 focus:ring-neobrutalism-pink"
+            rows={2}
+            placeholder="Brief description (optional - will auto-generate if empty)"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="category" className="block text-sm font-bold mb-2">
+            Category
+          </label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full px-3 py-2 border-2 border-black focus:outline-none focus:ring-2 focus:ring-neobrutalism-pink"
+          >
+            {['AI', 'Web3', 'Mobile', 'Cloud', 'DevOps', 'Design'].map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="imageUrl" className="block text-sm font-bold mb-2">
+            Image URL
+          </label>
+          <input
+            id="imageUrl"
+            type="url"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            className="w-full px-3 py-2 border-2 border-black focus:outline-none focus:ring-2 focus:ring-neobrutalism-pink"
+            placeholder="https://example.com/image.jpg (optional)"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="readTime" className="block text-sm font-bold mb-2">
+            Read Time
+          </label>
+          <input
+            id="readTime"
+            type="text"
+            value={readTime}
+            onChange={(e) => setReadTime(e.target.value)}
+            className="w-full px-3 py-2 border-2 border-black focus:outline-none focus:ring-2 focus:ring-neobrutalism-pink"
+            placeholder="5 min read"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="content" className="block text-sm font-bold mb-2">
+            Content *
+          </label>
+          <textarea
+            id="content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full px-3 py-2 border-2 border-black focus:outline-none focus:ring-2 focus:ring-neobrutalism-pink"
+            rows={10}
+            placeholder="Write your blog post content here..."
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={createBlogPost.isPending}
+          className="neo-button w-full disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {createBlogPost.isPending ? 'Creating Post...' : 'Create Blog Post'}
+        </button>
+      </form>
+    </div>
   );
 };
 
