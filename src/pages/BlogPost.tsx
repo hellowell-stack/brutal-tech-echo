@@ -4,14 +4,30 @@ import { useParams, Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Newsletter from '../components/Newsletter';
-import { blogPosts } from '../data/blogPosts';
+import { useBlogPost, useBlogPosts } from '../hooks/useBlogPosts';
+import { convertDatabasePostToBlogPost } from '../utils/blogPostConverter';
 
 const BlogPost = () => {
   const { id } = useParams<{ id: string }>();
+  const { data: dbPost, isLoading, error } = useBlogPost(id!);
+  const { data: allPosts } = useBlogPosts();
   
-  const post = blogPosts.find(post => post.id === id);
-  
-  if (!post) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <main className="container mx-auto px-4 py-12">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4">Loading...</h1>
+            <p>Please wait while we load the blog post.</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !dbPost) {
     return (
       <div className="min-h-screen">
         <Header />
@@ -28,6 +44,12 @@ const BlogPost = () => {
       </div>
     );
   }
+
+  const post = convertDatabasePostToBlogPost(dbPost);
+  const relatedPosts = allPosts
+    ?.filter(p => p.id !== dbPost.id && p.category === dbPost.category)
+    ?.slice(0, 2)
+    ?.map(convertDatabasePostToBlogPost) || [];
   
   return (
     <div className="min-h-screen">
@@ -70,40 +92,18 @@ const BlogPost = () => {
           <div className="prose prose-lg max-w-none">
             <p className="text-xl mb-6">{post.excerpt}</p>
             
-            <p className="mb-4">
-              This is a placeholder for the full article content. In a real implementation, this would contain the complete blog post text with proper formatting, images, and other multimedia elements.
-            </p>
-            
-            <p className="mb-4">
-              The neo-brutalism design style emphasizes bold typography, high contrast colors, and intentionally "unpolished" interfaces with playful geometric shapes and distinctive styling.
-            </p>
-            
-            <h2 className="text-2xl font-bold mt-8 mb-4">Key Takeaways</h2>
-            <ul className="list-disc pl-6 mb-6">
-              <li className="mb-2">Important point about {post.title}</li>
-              <li className="mb-2">Another critical insight about this topic</li>
-              <li className="mb-2">Future implications for the industry</li>
-            </ul>
-            
-            <p className="mb-4">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam euismod, tortor nec pharetra ultricies, ante erat imperdiet velit, nec laoreet enim lacus a velit. Nam elementum magna in erat volutpat eleifend.
-            </p>
-            
-            <h2 className="text-2xl font-bold mt-8 mb-4">What's Next?</h2>
-            <p>
-              The future of this technology looks promising. Experts predict continued innovation and adoption across multiple industries in the coming years.
-            </p>
+            <div className="whitespace-pre-wrap">
+              {dbPost.content}
+            </div>
           </div>
         </article>
         
-        <div className="max-w-3xl mx-auto mt-12 pt-8 border-t-2 border-black">
-          <h3 className="text-2xl font-bold mb-6">Related Articles</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {blogPosts
-              .filter(relatedPost => relatedPost.id !== post.id && relatedPost.category === post.category)
-              .slice(0, 2)
-              .map((relatedPost) => (
+        {relatedPosts.length > 0 && (
+          <div className="max-w-3xl mx-auto mt-12 pt-8 border-t-2 border-black">
+            <h3 className="text-2xl font-bold mb-6">Related Articles</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {relatedPosts.map((relatedPost) => (
                 <Link to={`/post/${relatedPost.id}`} key={relatedPost.id} className="block">
                   <div className="neo-card h-full">
                     <div className="relative mb-3 overflow-hidden border-2 border-black">
@@ -118,8 +118,9 @@ const BlogPost = () => {
                   </div>
                 </Link>
               ))}
+            </div>
           </div>
-        </div>
+        )}
       </main>
       
       <Newsletter />

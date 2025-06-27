@@ -5,17 +5,15 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import BlogCard from '../components/BlogCard';
 import Newsletter from '../components/Newsletter';
-import { blogPosts, categories } from '../data/blogPosts';
+import { useBlogPostsByCategory } from '../hooks/useBlogPosts';
+import { convertDatabasePostToBlogPost } from '../utils/blogPostConverter';
 
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const categoryName = categories.find(
-    cat => cat.toLowerCase() === slug
-  ) || 'Unknown Category';
+  const categoryName = slug?.charAt(0).toUpperCase() + slug?.slice(1) || 'Unknown Category';
+  const { data: dbPosts, isLoading, error } = useBlogPostsByCategory(categoryName);
   
-  const filteredPosts = blogPosts.filter(
-    post => post.category.toLowerCase() === slug
-  );
+  const filteredPosts = dbPosts?.map(convertDatabasePostToBlogPost) || [];
   
   return (
     <div className="min-h-screen">
@@ -29,7 +27,17 @@ const CategoryPage = () => {
           </p>
         </div>
         
-        {filteredPosts.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold mb-4">Loading articles...</h2>
+            <p>Please wait while we fetch the latest posts.</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold mb-4">Error loading articles</h2>
+            <p className="mb-4">There was an error loading the articles. Please try again later.</p>
+          </div>
+        ) : filteredPosts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPosts.map((post) => (
               <BlogCard key={post.id} post={post} />
